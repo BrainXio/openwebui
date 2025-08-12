@@ -11,7 +11,7 @@ services:
   tailscale:
     cap_add:
       - NET_ADMIN
-    container_name: ${CONTAINER_NAME_SUFFIX:-''}${CONTAINER_NAME:-openwebui}-ts
+    container_name: ${CONTAINER_NAME:-openwebui}${CONTAINER_NAME_SUFFIX:-''}-ts
     devices:
       - /dev/net/tun:/dev/net/tun
     environment:
@@ -24,7 +24,7 @@ services:
       start_period: 10s
       test: ["CMD", "tailscale", "status"]
       timeout: 5s
-    hostname: ${CONTAINER_NAME_SUFFIX:-''}${CONTAINER_NAME:-openwebui}
+    hostname: ${CONTAINER_NAME:-openwebui}${CONTAINER_NAME_SUFFIX:-''}
     image: tailscale/tailscale:latest
     restart: unless-stopped
     secrets:
