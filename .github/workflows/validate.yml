@@ -20,64 +20,29 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
 
       - name: Validate base configuration
-        run: |
-          if [ -f docker-compose.yml ]; then
-            docker-compose -f docker-compose.yml config
-          else
-            echo "docker-compose.yml not found, skipping base validation."
-            exit 1
-          fi
+        if: hashFiles('docker-compose.yml') != ''
+        run: docker-compose -f docker-compose.yml config
 
       - name: Validate with ports
-        run: |
-          if [ -f docker-compose.yml ] && [ -f docker-compose.add.ports.yml ]; then
-            docker-compose -f docker-compose.yml -f docker-compose.add.ports.yml config
-          else
-            echo "One or both Compose files not found, skipping ports validation."
-            exit 1
-          fi
+        if: hashFiles('docker-compose.yml') != '' && hashFiles('docker-compose.add.ports.yml') != ''
+        run: docker-compose -f docker-compose.yml -f docker-compose.add.ports.yml config
 
       - name: Validate with Tailscale
-        run: |
-          if [ -f docker-compose.yml ] && [ -f docker-compose.add.tailscale.yml ]; then
-            docker-compose -f docker-compose.yml -f docker-compose.add.tailscale.yml config
-          else
-            echo "One or both Compose files not found, skipping Tailscale validation."
-            exit 1
-          fi
+        if: hashFiles('docker-compose.yml') != '' && hashFiles('docker-compose.add.tailscale.yml') != ''
+        run: docker-compose -f docker-compose.yml -f docker-compose.add.tailscale.yml config
 
       - name: Validate with Traefik
-        run: |
-          if [ -f docker-compose.yml ] && [ -f docker-compose.add.traefik.yml ]; then
-            docker-compose -f docker-compose.yml -f docker-compose.add.traefik.yml config
-          else
-            echo "One or both Compose files not found, skipping Traefik validation."
-            exit 1
-          fi
+        if: hashFiles('docker-compose.yml') != '' && hashFiles('docker-compose.add.traefik.yml') != ''
+        run: docker-compose -f docker-compose.yml -f docker-compose.add.traefik.yml config
 
       - name: Validate with Traefik and Tailscale
-        run: |
-          if [ -f docker-compose.yml ] && [ -f docker-compose.add.traefik-tailscale.yml ]; then
-            docker-compose -f docker-compose.yml -f docker-compose.add.traefik-tailscale.yml config
-          else
-            echo "One or both Compose files not found, skipping Traefik-Tailscale validation."
-            exit 1
-          fi
+        if: hashFiles('docker-compose.yml') != '' && hashFiles('docker-compose.add.traefik-tailscale.yml') != ''
+        run: docker-compose -f docker-compose.yml -f docker-compose.add.traefik-tailscale.yml config
 
       - name: Validate with volume
-        run: |
-          if [ -f docker-compose.yml ] && [ -f docker-compose.add.volume.yml ]; then
-            docker-compose -f docker-compose.yml -f docker-compose.add.volume.yml config
-          else
-            echo "One or both Compose files not found, skipping volume validation."
-            exit 1
-          fi
+        if: hashFiles('docker-compose.yml') != '' && hashFiles('docker-compose.add.volume.yml') != ''
+        run: docker-compose -f docker-compose.yml -f docker-compose.add.volume.yml config
 
       - name: Validate with Traefik, Tailscale, and volume
-        run: |
-          if [ -f docker-compose.yml ] && [ -f docker-compose.add.traefik-tailscale.yml ] && [ -f docker-compose.add.volume.yml ]; then
-            docker-compose -f docker-compose.yml -f docker-compose.add.traefik-tailscale.yml -f docker-compose.add.volume.yml config
-          else
-            echo "One or more Compose files not found, skipping Traefik-Tailscale-volume validation."
-            exit 1
-          fi
+        if: hashFiles('docker-compose.yml') != '' && hashFiles('docker-compose.add.traefik-tailscale.yml') != '' && hashFiles('docker-compose.add.volume.yml') != ''
+        run: docker-compose -f docker-compose.yml -f docker-compose.add.traefik-tailscale.yml -f docker-compose.add.volume.yml config
