@@ -1,0 +1,35 @@
+# OUI! Keep the secrets safe, Another Intelligence says!
+# Ignore sensitive or generated files
+
+# Environment files
+.env
+
+# Data directories
+data/
+ollama-data/
+tailscale_state/
+
+# Logs
+*.log
+interaction_log.txt
+prompt_log.txt
+
+# Docker
+docker-compose.override.yml
+Dockerfile.local
+
+# IDE and build artifacts
+*.pyc
+__pycache__
+*.swp
+*.swo
+*.idea/
+*.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
