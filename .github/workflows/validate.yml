@@ -21,7 +21,7 @@ jobs:
 
       - name: Create traefik-net network
         run: |
-          docker network create traefik-net || echo "traefik-net network already exists or creation failed, continuing..."
+          docker network create --driver bridge traefik-net || true
 
       - name: Validate base configuration
         if: hashFiles('docker-compose.yml') != ''
