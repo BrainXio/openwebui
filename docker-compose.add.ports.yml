@@ -1,0 +1,6 @@
+---
+name: openwebui
+services:
+  openwebui:
+    ports:
+      - "${OPENWEBUI_PORT:-127.0.0.1:8080}:8080"

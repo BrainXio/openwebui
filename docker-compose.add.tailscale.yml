@@ -1,0 +1,37 @@
+---
+name: openwebui
+secrets:
+  tsauthkey:
+    file: ${TSAUTHKEY_PATH:-~/.secrets/openwebui-tsauthkey.key}
+services:
+  openwebui:
+    depends_on:
+      - tailscale
+    network_mode: service:tailscale
+  tailscale:
+    cap_add:
+      - NET_ADMIN
+    container_name: ${CONTAINER_NAME_SUFFIX:-''}${CONTAINER_NAME:-openwebui}-ts
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TS_EXTRA_ARGS=--auth-key file:/run/secrets/tsauthkey --accept-dns
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    healthcheck:
+      interval: 10s
+      retries: 3
+      start_period: 10s
+      test: ["CMD", "tailscale", "status"]
+      timeout: 5s
+    hostname: ${CONTAINER_NAME_SUFFIX:-''}${CONTAINER_NAME:-openwebui}
+    image: tailscale/tailscale:latest
+    networks:
+      - traefik-net
+    restart: unless-stopped
+    secrets:
+      - tsauthkey
+    volumes:
+      - tailscale_state:/var/lib/tailscale
+volumes:
+  tailscale_state:

@@ -1,0 +1,22 @@
+---
+name: openwebui
+networks:
+  traefik-net:
+    external: true
+services:
+  openwebui:
+    labels:
+      - "traefik.docker.network=traefik-net"
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.ip-whitelist.ipallowlist.sourcerange=${IP_WHITELIST:-0.0.0.0/0}"
+      - "traefik.http.middlewares.openwebui-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.openwebui.entrypoints=web"
+      - "traefik.http.routers.openwebui.middlewares=openwebui-https-redirect"
+      - "traefik.http.routers.openwebui.rule=Host(`chat.${DOMAIN}`)"
+      - "traefik.http.routers.openwebui-secure.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-secure.rule=Host(`chat.${DOMAIN}`)"
+      - "traefik.http.routers.openwebui-secure.service=openwebui"
+      - "traefik.http.routers.openwebui-secure.tls=true"
+      - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
+    networks:
+      - traefik-net
