@@ -1,8 +1,0 @@
----
-name: openwebui
-services:
-  openwebui:
-    volumes:
-      - openwebui-data:/app/backend/data
-volumes:
-  openwebui-data:

@@ -1,17 +1,120 @@
 ---
 name: openwebui
+
+# Base configuration for OpenWebUI service
+x-openwebui: &service-openwebui
+  container_name: openwebui
+  healthcheck:
+    interval: 10s
+    retries: 5
+    start_interval: 2s
+    start_period: 10s
+    test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+    timeout: 5s
+  image: ghcr.io/open-webui/open-webui:${OPENWEBUI_VERSION:-main}
+  pull_policy: always
+  restart: unless-stopped
+  volumes:
+    - ${OPENWEBUI_VOLUME:-openwebui-data}:/app/backend/data
+
+# Traefik labels for OpenWebUI
+x-traefik-labels: &service-traefik-labels
+  - traefik.enable=${OPENWEBUI_ENABLE_TRAEFIK:-false}
+  - traefik.docker.network=${OPENWEBUI_NETWORK_NAME:-openwebui-net}
+  - traefik.http.middlewares.ip-whitelist.ipallowlist.sourcerange=${IP_WHITELIST:-0.0.0.0/0}
+  - traefik.http.middlewares.openwebui-redirect.redirectscheme.scheme=https
+  - traefik.http.routers.openwebui.entrypoints=web
+  - traefik.http.routers.openwebui.middlewares=openwebui-redirect
+  - traefik.http.routers.openwebui.rule=Host(`chat.${DOMAIN:-localhost}`)
+  - traefik.http.routers.openwebui-secure.entrypoints=websecure
+  - traefik.http.routers.openwebui-secure.rule=Host(`chat.${DOMAIN:-localhost}`)
+  - traefik.http.routers.openwebui-secure.service=openwebui
+  - traefik.http.routers.openwebui-secure.tls=true
+  - traefik.http.services.openwebui.loadbalancer.server.port=8080
+
+# Base configuration for Tailscale service
+x-tailscale: &service-tailscale
+  cap_add:
+    - NET_ADMIN
+    - SYS_MODULE
+  devices:
+    - /dev/net/tun:/dev/net/tun
+  environment:
+    - TS_EXTRA_ARGS=--auth-key file:/run/secrets/tsauthkey --accept-dns
+    - TS_STATE_DIR=/var/lib/tailscale
+    - TS_USERSPACE=false
+  healthcheck:
+    interval: 10s
+    retries: 3
+    start_period: 10s
+    test: ["CMD", "tailscale", "status"]
+    timeout: 5s
+  image: tailscale/tailscale:${TAILSCALE_VERSION:-stable}
+  restart: unless-stopped
+  secrets:
+    - tsauthkey
+  volumes:
+    - tailscale-state:/var/lib/tailscale
+
+# Secret for Tailscale authentication key
+secrets:
+  tsauthkey:
+    file: ${TSAUTHKEY_PATH:-./secrets/tsauthkey}
+
+# ==============================================================================
+# Services
+# ==============================================================================
 services:
-  openwebui:
-    container_name: ${CONTAINER_NAME:-openwebui}${CONTAINER_NAME_SUFFIX:-}
-    healthcheck:
-      interval: 10s
-      retries: 5
-      start_interval: 2s
-      start_period: 10s
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
-      timeout: 5s
-    image: ghcr.io/open-webui/open-webui:main
-    pull_policy: always
-    restart: unless-stopped
-    volumes:
-      - ./data/openwebui:/app/backend/data
+  # OpenWebUI service for local deployment
+  openwebui-local:
+    <<: *service-openwebui
+    profiles:
+      - local
+    ports:
+      - ${OPENWEBUI_PORT:-127.0.0.1:8080}:8080
+    networks:
+      - openwebui-network
+
+  # OpenWebUI service with Traefik
+  openwebui-traefik:
+    <<: *service-openwebui
+    profiles:
+      - traefik
+    ports:
+      - ${OPENWEBUI_PORT:-127.0.0.1:8080}:8080
+    networks:
+      - openwebui-network
+    labels: *service-traefik-labels
+
+  # OpenWebUI service with Tailscale
+  openwebui-tailscale:
+    <<: *service-openwebui
+    depends_on:
+      - tailscale
+    network_mode: service:tailscale
+    profiles:
+      - tailscale
+
+  # Tailscale service
+  tailscale:
+    <<: *service-tailscale
+    container_name: openwebui-ts
+    hostname: ${TAILSCALE_HOSTNAME:-openwebui}
+    profiles:
+      - tailscale
+    networks:
+      - openwebui-network
+    ports:
+      - ${OPENWEBUI_PORT:-127.0.0.1:8080}:8080
+
+# ==============================================================================
+# Volumes and Networks
+# ==============================================================================
+volumes:
+  openwebui-data:
+  tailscale-state:
+
+networks:
+  openwebui-network:
+    name: ${OPENWEBUI_NETWORK_NAME:-openwebui-net}
+    external: ${OPENWEBUI_NETWORK_EXTERNAL:-false}
