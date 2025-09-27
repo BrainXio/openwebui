@@ -3,6 +3,7 @@
 
 # Environment files
 .env
+secrets
 
 # Data directories
 data/
