@@ -1,0 +1,85 @@
+---
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Run yamllint
+        run: yamllint -c .yamllint.yml .
+
+  validate-local:
+    runs-on: ubuntu-latest
+    needs: yamllint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Local configuration
+        uses: ./.github/actions/validate-compose
+        with:
+          profile: local
+          output-file: local-config.yml
+          env: |
+            OPENWEBUI_PORT=127.0.0.1:8080
+            OPENWEBUI_VERSION=main
+            OPENWEBUI_NETWORK_NAME=openwebui-net
+            OPENWEBUI_NETWORK_EXTERNAL=false
+
+  validate-traefik:
+    runs-on: ubuntu-latest
+    needs: yamllint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Traefik configuration
+        uses: ./.github/actions/validate-compose
+        with:
+          profile: traefik
+          output-file: traefik-config.yml
+          env: |
+            OPENWEBUI_PORT=127.0.0.1:8080
+            OPENWEBUI_VERSION=main
+            OPENWEBUI_NETWORK_NAME=openwebui-net
+            OPENWEBUI_NETWORK_EXTERNAL=false
+            OPENWEBUI_ENABLE_TRAEFIK=true
+            DOMAIN=localhost
+            IP_WHITELIST=0.0.0.0/0
+
+  validate-tailscale:
+    runs-on: ubuntu-latest
+    needs: yamllint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Tailscale configuration
+        uses: ./.github/actions/validate-compose
+        with:
+          profile: tailscale
+          output-file: tailscale-config.yml
+          env: |
+            OPENWEBUI_PORT=127.0.0.1:8080
+            OPENWEBUI_VERSION=main
+            TAILSCALE_VERSION=stable
+            OPENWEBUI_NETWORK_NAME=openwebui-net
+            OPENWEBUI_NETWORK_EXTERNAL=false
+            OPENWEBUI_ENABLE_TRAEFIK=false
